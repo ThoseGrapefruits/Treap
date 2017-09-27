@@ -24,18 +24,17 @@ class TreapTest {
 
     @Test
     void testAddContains() {
-        Treap<Integer> treap = new Treap<>(randomData);
-
-        for (Integer d : randomData) {
-            Assertions.assertTrue(treap.contains(d));
-        }
+        Treap<Integer> treap = new Treap<>();
+        treap.addAll(randomData);
 
         Assertions.assertTrue(treap.containsAll(randomData));
     }
 
     @Test
     void testAddRemove() {
-        Treap<Integer> treap = new Treap<>(randomData);
+        Treap<Integer> treap = new Treap<>();
+        treap.addAll(randomData);
+
         List<Integer> toRemove = randomData.subList(0, 1);
         List<Integer> remaining = randomData.subList(1, randomData.size() - 1);
 
@@ -51,7 +50,6 @@ class TreapTest {
 
     @Test
     void testToString() {
-        //Treap<Integer> treap = new Treap<>(randomData);
         Treap<Character> treap = new Treap<>('F', 10,
                                              new Treap<>('T', 7,
                                                          new Treap<>('X', 6),
@@ -66,7 +64,9 @@ class TreapTest {
 
     @Test
     void testToArray() {
-        final Treap<Integer> treap = new Treap<>(randomData);
+        final Treap<Integer> treap = new Treap<>();
+        treap.addAll(randomData);
+
         final Integer[] array = new Integer[randomDataSize];
         treap.toArray(array);
 
