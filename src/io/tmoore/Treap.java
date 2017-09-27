@@ -12,27 +12,32 @@ import java.util.Random;
  */
 public class Treap<T extends Comparable<T>> implements Collection<T> {
     private static final Random random = new Random();
+    private static final int priorityLimit = 100;
 
     private Treap<T> left;
     private Treap<T> right;
 
     /**
-     * CONSTRAINT: Never {@code null} outside of constructors.
+     * The value held by {@link this}.
      */
-    private PriorityTuple<T> tuple;
+    private T value;
+
+    /**
+     * The priority of the node in the tree. Always increase as one moves up in the tree.
+     */
+    private int priority;
 
     public Treap() {
         this(null, null, null);
     }
 
     private Treap(T value, Treap<T> right, Treap<T> left) {
-        tuple = new PriorityTuple<>(value);
-        this.left = left;
-        this.right = right;
+        this(value, random.nextInt(priorityLimit), right, left);
     }
 
     public Treap(T value, int priority, Treap<T> right, Treap<T> left) {
-        tuple = new PriorityTuple<>(value, priority);
+        this.value = value;
+        this.priority = priority;
         this.left = left;
         this.right = right;
     }
@@ -45,10 +50,6 @@ public class Treap<T extends Comparable<T>> implements Collection<T> {
         this(value, priority, null, null);
     }
 
-    public Treap(Collection<T> initialContents) {
-        this.addAll(initialContents);
-    }
-
     @Override
     public int size() {
         return 1 + (left == null ? 0 : left.size()) + (right == null ? 0 : right.size());
@@ -56,13 +57,13 @@ public class Treap<T extends Comparable<T>> implements Collection<T> {
 
     @Override
     public boolean isEmpty() {
-        return tuple == null && left == null && right == null;
+        return value == null && left == null && right == null;
     }
 
     @Override
     public boolean contains(Object o) {
         Objects.requireNonNull(o);
-        return (tuple != null && o.equals(tuple.value))
+        return (o.equals(value))
                || (left != null && left.contains(o))
                || (right != null && right.contains(o));
     }
@@ -93,7 +94,7 @@ public class Treap<T extends Comparable<T>> implements Collection<T> {
             left.addContentsToList(list);
         }
 
-        list.add(tuple.value);
+        list.add(value);
 
         if (right != null) {
             right.addContentsToList(list);
@@ -115,17 +116,16 @@ public class Treap<T extends Comparable<T>> implements Collection<T> {
     public boolean add(T newItem, Integer priority) {
         Objects.requireNonNull(newItem);
 
-        if (tuple == null) {
-            tuple = (priority == null) ? new PriorityTuple<>(newItem)
-                                       : new PriorityTuple<>(newItem, priority);
+        if (value == null) {
+            value = newItem;
             return true;
         }
 
-        if (newItem.equals(tuple.value)) {
+        if (newItem.equals(value)) {
             return false;
         }
 
-        if (newItem.compareTo(tuple.value) < 0) {
+        if (newItem.compareTo(value) < 0) {
             // Add to the left side
             if (left == null) {
                 left = (priority == null) ? new Treap<>(newItem)
@@ -149,7 +149,7 @@ public class Treap<T extends Comparable<T>> implements Collection<T> {
 
     @Override
     public boolean remove(Object o) {
-        if (o == null || tuple == null || tuple.value.getClass() != o.getClass()) {
+        if (o == null || value == null || value.getClass() != o.getClass()) {
             return false;
         }
 
@@ -162,28 +162,13 @@ public class Treap<T extends Comparable<T>> implements Collection<T> {
     private boolean remove(T item) {
         Objects.requireNonNull(item);
 
-        if (tuple != null && item.equals(tuple.value)) {
-            tuple = null;
-            pullUp();
+        if (item.equals(value)) {
+            priority = Integer.MIN_VALUE;
             return true;
         }
 
         return (left != null && left.remove(item))
                || (right != null && right.remove(item));
-    }
-
-    /**
-     * Recursively pull up values from children to fill the gap in this {@link Treap}'s value.
-     *
-     * @throws IllegalStateException if {@link #tuple} is not {@code null}
-     */
-    private void pullUp() {
-        if (tuple != null) {
-            throw new IllegalStateException(
-                    String.format("Expected tuple to be null, but found %s.", tuple.toString()));
-        }
-
-
     }
 
     @Override
@@ -228,92 +213,17 @@ public class Treap<T extends Comparable<T>> implements Collection<T> {
 
     @Override
     public void clear() {
+        value = null;
         left = null;
         right = null;
-        tuple = null;
     }
 
     @Override
     public String toString() {
-        if (tuple == null) {
+        if (value == null) {
             return "Empty Treap";
         }
 
-        return tuple.toString();
-
-        /*
-        StringBuilder sb = new StringBuilder();
-        toStringAppend(sb, 0, getHeight());
-        return sb.toString();
-        */
-    }
-
-    /*
-    private void toStringAppend(StringBuilder sb, int level, int height) {
-        for (int i = 0; i < height - level; i++) {
-            sb.append("    ");
-        }
-
-        sb.append(tuple.toString()).append('\n');
-
-        if (left != null) {
-            left.toStringAppend(sb, level + 1, height);
-            sb.deleteCharAt(sb.length() - 1);
-        }
-
-        sb.append(' ');
-
-        if (right != null) {
-            right.toStringAppend(sb, level + 1, height);
-        }
-    }
-
-    private int getHeight() {
-        if (left == null && right == null) {
-            return 1;
-        }
-
-        if (left == null) {
-            return 1 + right.getHeight();
-        }
-
-        if (right == null) {
-            return 1 + left.getHeight();
-        }
-
-        return 1 + Math.max(left.getHeight(), right.getHeight());
-    }
-    */
-
-    private class PriorityTuple<V extends Comparable<V>> implements Comparable<PriorityTuple<V>> {
-
-        /**
-         * The value held by {@link this}.
-         */
-        private final V value;
-
-        /**
-         * The priority of the node in the tree. Always increase as one moves up in the tree.
-         */
-        private int priority;
-
-        private PriorityTuple(V value, int priority) {
-            this.value = Objects.requireNonNull(value);
-            this.priority = priority;
-        }
-
-        private PriorityTuple(V value) {
-            this(value, random.nextInt(100));
-        }
-
-        @Override
-        public String toString() {
-            return tuple.value + " (" + tuple.priority + ')';
-        }
-
-        @Override
-        public int compareTo(PriorityTuple<V> o) {
-            return value.compareTo(o.value);
-        }
+        return value + " (" + priority + ')';
     }
 }
