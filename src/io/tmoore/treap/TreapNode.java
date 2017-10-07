@@ -1,4 +1,4 @@
-package io.tmoore;
+package io.tmoore.treap;
 
 
 import java.util.ArrayList;
@@ -16,8 +16,8 @@ public class TreapNode<T extends Comparable<T>> implements Collection<T> {
     private static final Random random = new Random();
     private static final int priorityLimit = 100;
 
-    private TreapNode left;
-    private TreapNode right;
+    private TreapNode<T> left;
+    private TreapNode<T> right;
 
     /**
      * The value held by {@link this}.
@@ -33,23 +33,23 @@ public class TreapNode<T extends Comparable<T>> implements Collection<T> {
         this(null, null, null);
     }
 
-    TreapNode(T value, TreapNode right, TreapNode left) {
+    TreapNode(T value, TreapNode<T> right, TreapNode<T> left) {
         this(value, random.nextInt(priorityLimit), right, left);
     }
 
-    TreapNode(T value, int priority, TreapNode right, TreapNode left) {
+    TreapNode(T value, int priority, TreapNode<T> right, TreapNode<T> left) {
         this.value = value;
         this.priority = priority;
         this.left = left;
         this.right = right;
     }
 
-    TreapNode(T value) {
-        this(value, null, null);
-    }
-
     TreapNode(T value, int priority) {
         this(value, priority, null, null);
+    }
+
+    private TreapNode(T value) {
+        this(value, null, null);
     }
 
     @Override
@@ -130,8 +130,8 @@ public class TreapNode<T extends Comparable<T>> implements Collection<T> {
         if (newItem.compareTo(value) < 0) {
             // Add to the left side
             if (left == null) {
-                left = (priority == null) ? new TreapNode(newItem)
-                                          : new TreapNode(newItem, priority);
+                left = (priority == null) ? new TreapNode<>(newItem)
+                                          : new TreapNode<>(newItem, priority);
                 return true;
             } else {
                 return left.add(newItem, priority);
@@ -140,8 +140,8 @@ public class TreapNode<T extends Comparable<T>> implements Collection<T> {
         else {
             // Add to the right side
             if (right == null) {
-                right = (priority == null) ? new TreapNode(newItem)
-                                           : new TreapNode(newItem, priority);
+                right = (priority == null) ? new TreapNode<>(newItem)
+                                           : new TreapNode<>(newItem, priority);
                 return true;
             } else {
                 return right.add(newItem, priority);

@@ -1,4 +1,4 @@
-package io.tmoore;
+package io.tmoore.treap;
 
 import java.util.Collection;
 import java.util.Iterator;

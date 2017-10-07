@@ -1,4 +1,4 @@
-package io.tmoore;
+package io.tmoore.treap;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
