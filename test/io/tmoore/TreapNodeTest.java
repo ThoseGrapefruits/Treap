@@ -1,4 +1,4 @@
-package io.tmoore.test;
+package io.tmoore;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -8,9 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import io.tmoore.Treap;
-
-class TreapTest {
+class TreapNodeTest {
     private static final Random random = new Random();
     private static final int randomDataSize = 10;
     private List<Integer> randomData = new ArrayList<>(randomDataSize);
@@ -50,13 +48,14 @@ class TreapTest {
 
     @Test
     void testToString() {
-        Treap<Character> treap = new Treap<>('F', 10,
-                                             new Treap<>('T', 7,
-                                                         new Treap<>('X', 6),
-                                                         new Treap<>('H', 3)),
-                                             new Treap<>('D', 8,
-                                                         new Treap<>('E', 1),
-                                                         new Treap<>('C', 2)));
+        Treap<Character> treap = new Treap<>(
+                new TreapNode<>('F', 10,
+                                new TreapNode<>('T', 7,
+                                                new TreapNode<>('X', 6),
+                                                new TreapNode<>('H', 3)),
+                                new TreapNode<>('D', 8,
+                                                new TreapNode<>('E', 1),
+                                                new TreapNode<>('C', 2))));
         treap.add('K', 5);
 
         System.out.println(treap.toString());
