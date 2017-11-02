@@ -1,28 +1,37 @@
 package io.tmoore.treap;
 
-
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Random;
-import java.util.Spliterator;
-import java.util.function.Predicate;
-import java.util.stream.Stream;
 
-public class TreapNode<T extends Comparable<T>> implements Collection<T> {
+class TreapNode<T extends Comparable<T>> implements Iterable<T> {
 
     private static final Random random = new Random();
     private static final int priorityLimit = 100;
 
+    private static final TreapNode NO_ROOT_CHANGE = new TreapNode();
+
     private TreapNode<T> left;
     private TreapNode<T> right;
+
+    TreapNode<T> getLeft() {
+        return left;
+    }
+
+    TreapNode<T> getRight() {
+        return right;
+    }
 
     /**
      * The value held by {@link this}.
      */
     private T value;
+
+    T getValue() {
+        return value;
+    }
 
     /**
      * The priority of the node in the tree. Always increase as one moves up in the tree.
@@ -48,26 +57,12 @@ public class TreapNode<T extends Comparable<T>> implements Collection<T> {
         this(value, priority, null, null);
     }
 
-    private TreapNode(T value) {
+    TreapNode(T value) {
         this(value, null, null);
     }
 
-    @Override
-    public int size() {
+    int size() {
         return 1 + (left == null ? 0 : left.size()) + (right == null ? 0 : right.size());
-    }
-
-    @Override
-    public boolean isEmpty() {
-        return value == null && left == null && right == null;
-    }
-
-    @Override
-    public boolean contains(Object o) {
-        Objects.requireNonNull(o);
-        return (o.equals(value))
-               || (left != null && left.contains(o))
-               || (right != null && right.contains(o));
     }
 
     @Override
@@ -75,12 +70,7 @@ public class TreapNode<T extends Comparable<T>> implements Collection<T> {
         return toList().iterator();
     }
 
-    @Override
-    public Object[] toArray() {
-        return toList().toArray();
-    }
-
-    private List<T> toList() {
+    List<T> toList() {
         ArrayList<T> collector = new ArrayList<>();
         addContentsToList(collector);
         return collector;
@@ -103,67 +93,86 @@ public class TreapNode<T extends Comparable<T>> implements Collection<T> {
         }
     }
 
-    @Override
-    public <T1> T1[] toArray(T1[] a) {
-        //noinspection SuspiciousToArrayCall
-        return toList().toArray(a);
-    }
-
-    @Override
-    public boolean add(T newItem) {
-        Objects.requireNonNull(newItem);
-        return add(newItem, null);
-    }
-
-    boolean add(T newItem, Integer priority) {
-        Objects.requireNonNull(newItem);
-
-        if (value == null) {
-            value = newItem;
-            return true;
+    boolean add(TreapNode<T> newNode) {
+        if (value == null) {  // Only for root
+            value = newNode.value;
         }
 
-        if (newItem.equals(value)) {
+        if (newNode.value.equals(value)) {
             return false;
         }
 
-        if (newItem.compareTo(value) < 0) {
+
+        if (newNode.value.compareTo(value) < 0) {
             // Add to the left side
             if (left == null) {
-                left = (priority == null) ? new TreapNode<>(newItem)
-                                          : new TreapNode<>(newItem, priority);
+                left = newNode;
                 return true;
             } else {
-                return left.add(newItem, priority);
+                return left.add(newNode);
             }
         }
         else {
             // Add to the right side
             if (right == null) {
-                right = (priority == null) ? new TreapNode<>(newItem)
-                                           : new TreapNode<>(newItem, priority);
+                right = newNode;
                 return true;
             } else {
-                return right.add(newItem, priority);
+                return right.add(newNode);
             }
         }
     }
 
-    @Override
-    public boolean remove(Object o) {
-        if (o == null || value == null || value.getClass() != o.getClass()) {
-            return false;
+    TreapNode<T> balance() {
+        // Assume 1 change happens at a time, so both branches can't be out of balance.
+        if (left == null && right == null) {
+            return this;
         }
 
-        @SuppressWarnings("unchecked")
-        T item = (T) o;
+        if (right != null) {
+            right = right.balance();
+            if (right.priority > priority) {
+                return rotateLeft();
+            }
+            return this;
+        }
 
-        return remove(item);
+        left = left.balance();
+        if (left.priority > priority) {
+            return rotateRight();
+        }
+        return this;
     }
 
-    private boolean remove(T item) {
-        Objects.requireNonNull(item);
+    private TreapNode<T> rotateRight() {
+        final TreapNode<T> l = left;
+        left = left.right;
+        l.right = this;
+        return l;
+    }
 
+    private TreapNode<T> rotateLeft() {
+        final TreapNode<T> r = right;
+        right = right.left;
+        r.left = this;
+        return r;
+    }
+
+    boolean contains(T item) {
+        Objects.requireNonNull(item);
+        if (value == null) {
+            return false;
+        }
+        if (value.equals(item)) {
+            return true;
+        }
+        if (value.compareTo(item) > 0)  {
+            return left.contains(item);
+        }
+        return right.contains(item);
+    }
+
+    boolean remove(T item) {
         if (item.equals(value)) {
             priority = Integer.MIN_VALUE;
             return true;
@@ -173,48 +182,7 @@ public class TreapNode<T extends Comparable<T>> implements Collection<T> {
                || (right != null && right.remove(item));
     }
 
-    @Override
-    public boolean containsAll(Collection<?> c) {
-        for (Object item : c) {
-            if (!contains(item)) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    @Override
-    public boolean addAll(Collection<? extends T> c) {
-        boolean changed = false;
-        for (T item : c) {
-            changed |= add(item);
-        }
-        return changed;
-    }
-
-    @Override
-    public boolean removeAll(Collection<?> c) {
-        boolean changed = false;
-        for (Object item : c) {
-            changed |= remove(item);
-        }
-        return changed;
-    }
-
-    @Override
-    public boolean retainAll(Collection<?> c) {
-        boolean changed = false;
-        for (T item : this) {
-            if (!c.contains(item)) {
-                changed |= remove(item);
-            }
-        }
-        return changed;
-    }
-
-    @Override
-    public void clear() {
+    void clear() {
         value = null;
         left = null;
         right = null;
@@ -227,26 +195,6 @@ public class TreapNode<T extends Comparable<T>> implements Collection<T> {
         }
 
         return value + " (" + priority + ')';
-    }
-
-    @Override
-    public boolean removeIf(Predicate<? super T> filter) {
-        return false;
-    }
-
-    @Override
-    public Spliterator<T> spliterator() {
-        return null;
-    }
-
-    @Override
-    public Stream<T> stream() {
-        return null;
-    }
-
-    @Override
-    public Stream<T> parallelStream() {
-        return null;
     }
 }
 

@@ -1,56 +1,31 @@
 package io.tmoore.treap;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.Spliterator;
+import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
-import java.util.stream.Stream;
+import java.util.stream.Collectors;
 
 public class Treap<T extends Comparable<T>> implements Collection<T> {
 
     private TreapNode<T> root;
 
-    /* CONSTRUCTORS */
+    // CONSTRUCTORS
 
+    @SuppressWarnings("WeakerAccess")
     public Treap(TreapNode<T> root) {
         this.root = root;
     }
 
-    public Treap(){
+    @SuppressWarnings("WeakerAccess")
+    public Treap() {
         root = new TreapNode<>();
     }
 
-    public Treap(T value, TreapNode<T> right, TreapNode<T> left) {
-        root = new TreapNode<>(value, right, left);
-    }
-
-    Treap(T value, int priority, TreapNode<T> right, TreapNode<T> left) {
-        root = new TreapNode<>(value, priority, right, left);
-    }
-
-    Treap(T value, int priority) {
-        root = new TreapNode<T>(value, priority);
-    }
-
-    @Override
-    public boolean removeIf(Predicate<? super T> filter) {
-        return root.removeIf(filter);
-    }
-
-    @Override
-    public Spliterator<T> spliterator() {
-        return root.spliterator();
-    }
-
-    @Override
-    public Stream<T> stream() {
-        return root.stream();
-    }
-
-    @Override
-    public Stream<T> parallelStream() {
-        return root.parallelStream();
+    TreapNode<T> getRoot() {
+        return root;
     }
 
     @Override
@@ -65,12 +40,18 @@ public class Treap<T extends Comparable<T>> implements Collection<T> {
 
     @Override
     public boolean isEmpty() {
-        return root.isEmpty();
+        return root.getValue() == null && root.getLeft() == null && root.getRight() == null;
     }
 
     @Override
     public boolean contains(Object o) {
-        return root.contains(o);
+        if (o == null || root.getValue() == null || root.getValue().getClass() != o.getClass()) {
+            return false;
+        }
+
+        @SuppressWarnings("unchecked") T item = (T)o;
+
+        return root.contains(item);
     }
 
     @Override
@@ -80,43 +61,95 @@ public class Treap<T extends Comparable<T>> implements Collection<T> {
 
     @Override
     public Object[] toArray() {
-        return root.toArray();
+        return root.toList().toArray();
     }
 
     @Override
     public <T1> T1[] toArray(T1[] a) {
         //noinspection SuspiciousToArrayCall
-        return root.toArray(a);
+        return root.toList().toArray(a);
+
+    }
+
+    boolean add(T newItem, int priority) {
+        Objects.requireNonNull(newItem);
+        return add(new TreapNode<>(newItem, priority));
+    }
+
+    private boolean add(TreapNode<T> newNode) {
+        if (root.add(newNode)) {
+            TreapNode<T> newRoot = root.balance();
+            if (newRoot != root) {
+                root = newRoot;
+            }
+            return true;
+        }
+        return false;
     }
 
     @Override
     public boolean add(T newItem) {
-        return root.add(newItem);
+        Objects.requireNonNull(newItem);
+        return add(new TreapNode<>(newItem));
     }
 
     @Override
     public boolean remove(Object o) {
-        return root.remove(o);
+        if (o == null || root.getValue() == null || root.getValue().getClass() != o.getClass()) {
+            return false;
+        }
+
+        @SuppressWarnings("unchecked")
+        T item = (T) o;
+
+        if (root.remove(item)) {
+            TreapNode<T> newRoot = root.balance();
+            if (newRoot != root) {
+                root = newRoot;
+            }
+            return true;
+        }
+        return false;
     }
 
     @Override
     public boolean containsAll(Collection<?> c) {
-        return root.containsAll(c);
+        for (Object item : c) {
+            if (!contains(item)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     @Override
     public boolean addAll(Collection<? extends T> c) {
-        return root.addAll(c);
+        boolean changed = false;
+        for (T item : c) {
+            changed |= add(item);
+        }
+        return changed;
     }
 
     @Override
     public boolean removeAll(Collection<?> c) {
-        return root.removeAll(c);
+        boolean changed = false;
+        for (Object item : c) {
+            changed |= remove(item);
+        }
+        return changed;
     }
 
     @Override
     public boolean retainAll(Collection<?> c) {
-        return root.retainAll(c);
+        boolean changed = false;
+        for (T item : this) {
+            if (!c.contains(item)) {
+                changed |= remove(item);
+            }
+        }
+        return changed;
     }
 
     @Override
@@ -124,7 +157,48 @@ public class Treap<T extends Comparable<T>> implements Collection<T> {
         root.clear();
     }
 
-    boolean add(T newItem, Integer priority) {
-        return root.add(newItem, priority);
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        List<TreapNode<T>> previousLevel = new ArrayList<>();
+        List<TreapNode<T>> currentLevel = new ArrayList<>();
+        List<String> collected = new ArrayList<>();
+        previousLevel.add(root);
+
+        while (true) {
+            for (TreapNode<T> node : previousLevel) {
+                sb.append(String.format("%1$-6s", node == null ? " " : node.toString()));
+                sb.append(' ');
+            }
+
+            collected.add(sb.toString());
+            sb.setLength(0);
+
+            for (TreapNode<T> node : previousLevel) {
+                if (node == null) {
+                    currentLevel.add(null);
+                }
+                else {
+                    currentLevel.add(node.getLeft());
+                    currentLevel.add(node.getRight());
+                }
+            }
+
+            if (currentLevel.stream().allMatch(Objects::isNull)) {
+                break;
+            }
+
+            previousLevel = currentLevel;
+            currentLevel = new ArrayList<>();
+        }
+
+        sb.setLength(0);
+
+        for (int i = collected.size() - 1; i >= 0; i--) {
+            collected.set(i, sb.toString() + collected.get(i));
+            sb.append("       ");
+        }
+
+        return collected.stream().collect(Collectors.joining("\n"));
     }
 }
