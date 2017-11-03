@@ -163,6 +163,8 @@ public class Treap<T extends Comparable<T>> implements Collection<T> {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
+        sb.append(getClass().getName());
+        sb.append(System.lineSeparator());
         root.toStringRecursive(sb, 0);
         return sb.toString();
     }

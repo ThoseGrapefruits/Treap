@@ -239,5 +239,14 @@ class TreapNode<T extends Comparable<T>> implements Iterable<T> {
 
         return String.format("%s (%d)", value, priority);
     }
+
+    public int depth() {
+        if (value == null || (left == null && right == null)) {
+            return 0;
+        }
+        return 1 + Math.max(
+                left == null ? 0 : left.depth(),
+                right == null ? 0 : right.depth());
+    }
 }
 
