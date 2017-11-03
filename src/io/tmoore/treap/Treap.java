@@ -1,7 +1,10 @@
 package io.tmoore.treap;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -159,46 +162,52 @@ public class Treap<T extends Comparable<T>> implements Collection<T> {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        List<TreapNode<T>> previousLevel = new ArrayList<>();
-        List<TreapNode<T>> currentLevel = new ArrayList<>();
-        List<String> collected = new ArrayList<>();
-        previousLevel.add(root);
+        StringBuilder sb = new StringBuilder();
+        root.toStringRecursive(sb, 0);
+        return sb.toString();
+    }
 
-        while (true) {
-            for (TreapNode<T> node : previousLevel) {
-                sb.append(String.format("%1$-6s", node == null ? " " : node.toString()));
-                sb.append(' ');
-            }
+    private String verticalToString() {
+        int maxWidth = 0;
+        final List<List<TreapNode<T>>> levels = new ArrayList<>();
+        levels.add(new ArrayList<>(Collections.singletonList(root)));
 
-            collected.add(sb.toString());
-            sb.setLength(0);
-
+        boolean allNull;
+        do {
+            levels.add(new ArrayList<>());
+            final List<TreapNode<T>> previousLevel = levels.get(levels.size() - 2);
+            final List<TreapNode<T>> currentLevel = levels.get(levels.size() - 1);
+            allNull = true;
             for (TreapNode<T> node : previousLevel) {
                 if (node == null) {
                     currentLevel.add(null);
                 }
                 else {
+                    maxWidth = Math.max(maxWidth, node.toString().length());
+                    allNull = false;
                     currentLevel.add(node.getLeft());
                     currentLevel.add(node.getRight());
                 }
             }
+        } while (!allNull);
 
-            if (currentLevel.stream().allMatch(Objects::isNull)) {
-                break;
-            }
+        final String formatString = "%1$" + maxWidth + "s";
+        final String tab = String.format(formatString, "");
+        final Deque<String> indent = new ArrayDeque<>(Collections.nCopies(
+                levels.size(), ""));
+        final StringBuilder spacer = new StringBuilder();
 
-            previousLevel = currentLevel;
-            currentLevel = new ArrayList<>();
-        }
-
-        sb.setLength(0);
-
-        for (int i = collected.size() - 1; i >= 0; i--) {
-            collected.set(i, sb.toString() + collected.get(i));
-            sb.append("       ");
-        }
-
-        return collected.stream().collect(Collectors.joining("\n"));
+        return levels.stream()
+                     .map(treapNodes -> {
+                         indent.pop();
+                         spacer.append(tab.substring(0, tab.length() / 2 - 2));
+                         String result =  indent.stream().collect(Collectors.joining(tab))
+                                + treapNodes.stream()
+                                            .map(node -> node == null ? "" : node.toString())
+                                            .map(s -> String.format(formatString, s))
+                                            .collect(Collectors.joining(spacer));
+                         return result;
+                     })
+                     .collect(Collectors.joining(System.lineSeparator()));
     }
 }

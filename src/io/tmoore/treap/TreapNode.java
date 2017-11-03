@@ -9,9 +9,6 @@ import java.util.Random;
 class TreapNode<T extends Comparable<T>> implements Iterable<T> {
 
     private static final Random random = new Random();
-    private static final int priorityLimit = 100;
-
-    private static final TreapNode NO_ROOT_CHANGE = new TreapNode();
 
     private TreapNode<T> left;
     private TreapNode<T> right;
@@ -38,12 +35,16 @@ class TreapNode<T extends Comparable<T>> implements Iterable<T> {
      */
     private int priority;
 
+    int getPriority() {
+        return priority;
+    }
+
     TreapNode() {
         this(null, null, null);
     }
 
-    TreapNode(T value, TreapNode<T> right, TreapNode<T> left) {
-        this(value, random.nextInt(priorityLimit), right, left);
+    private TreapNode(T value, TreapNode<T> right, TreapNode<T> left) {
+        this(value, random.nextInt(), right, left);
     }
 
     TreapNode(T value, int priority, TreapNode<T> right, TreapNode<T> left) {
@@ -132,18 +133,30 @@ class TreapNode<T extends Comparable<T>> implements Iterable<T> {
         if (right != null) {
             right = right.balance();
             if (right.priority > priority) {
-                return rotateLeft();
+                return rotateLeft().balance();
             }
-            return this;
+            if (right.priority == Integer.MIN_VALUE && right.left == null && right.right == null) {
+                right = null;
+            }
         }
 
-        left = left.balance();
-        if (left.priority > priority) {
-            return rotateRight();
+        if (left != null) {
+            left = left.balance();
+            if (left.priority > priority) {
+                return rotateRight().balance();
+            }
+            if (left.priority == Integer.MIN_VALUE && left.left == null && left.right == null) {
+                left = null;
+            }
         }
+
         return this;
     }
 
+    /**
+     *
+     * @return the new local root node
+     */
     private TreapNode<T> rotateRight() {
         final TreapNode<T> l = left;
         left = left.right;
@@ -151,6 +164,10 @@ class TreapNode<T extends Comparable<T>> implements Iterable<T> {
         return l;
     }
 
+    /**
+     *
+     * @return the new local root node
+     */
     private TreapNode<T> rotateLeft() {
         final TreapNode<T> r = right;
         right = right.left;
@@ -167,9 +184,9 @@ class TreapNode<T extends Comparable<T>> implements Iterable<T> {
             return true;
         }
         if (value.compareTo(item) > 0)  {
-            return left.contains(item);
+            return left != null && left.contains(item);
         }
-        return right.contains(item);
+        return right != null && right.contains(item);
     }
 
     boolean remove(T item) {
@@ -188,13 +205,39 @@ class TreapNode<T extends Comparable<T>> implements Iterable<T> {
         right = null;
     }
 
+    void toStringRecursive(StringBuilder sb, int depth) {
+        if (depth != 0) {
+            sb.append(String.format("%1$" + (depth * 4) + "s", ""));
+        }
+        sb.append(toString());
+        sb.append(System.lineSeparator());
+        if (right == null && left == null) {
+            return;
+        }
+
+        if (right == null) {
+            sb.append(String.format("%1$" + ((depth + 1) * 4) + "s", ""))
+              .append("----").append(System.lineSeparator());
+        }
+        else {
+            right.toStringRecursive(sb, depth + 1);
+        }
+        if (left == null) {
+            sb.append(String.format("%1$" + ((depth + 1) * 4) + "s", ""))
+              .append("----").append(System.lineSeparator());
+        }
+        else {
+            left.toStringRecursive(sb, depth + 1);
+        }
+    }
+
     @Override
     public String toString() {
         if (value == null) {
             return "Empty Treap";
         }
 
-        return value + " (" + priority + ')';
+        return String.format("%s (%d)", value, priority);
     }
 }
 

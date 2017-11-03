@@ -2,62 +2,92 @@ package io.tmoore.treap;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Queue;
 import java.util.Random;
+import java.util.Set;
 
 class TreapNodeTest {
     private static final Random random = new Random();
-    private static final int randomDataSize = 10;
-    private List<Character> randomData = new ArrayList<>(randomDataSize);
+    private static final int randomDataSize = 64;
+    private final List<Integer> randomData = new ArrayList<>(randomDataSize);
+    private final Treap<Integer> treap = new Treap<>();
 
     @BeforeEach
-    void setup() {
-        for (int i = 0; i < randomDataSize; i++) {
-            randomData.add((char)(0x41 + random.nextInt(26)));
+    void setupEach() {
+        Set<Integer> randomDataSet = new HashSet<>(randomDataSize);
+        while (randomDataSet.size() < randomDataSize) {
+            randomDataSet.add(random.nextInt(255));
         }
+        randomData.addAll(randomDataSet);
+        treap.addAll(randomDataSet);
     }
 
     @Test
     void testAddContains() {
-        Treap<Character> treap = new Treap<>();
-        treap.addAll(randomData);
-
         Assertions.assertTrue(treap.containsAll(randomData));
     }
 
-    @Test
+    @RepeatedTest(100)
     void testAddRemove() {
-        Treap<Character> treap = new Treap<>();
-        treap.addAll(randomData);
+        List<Integer> toRemove = randomData.subList(0, 1);
+        List<Integer> remaining = randomData.subList(1, randomData.size());
 
-        List<Character> toRemove = randomData.subList(0, 1);
-        List<Character> remaining = randomData.subList(1, randomData.size() - 1);
+        System.out.println("ORIGINAL");
+        System.out.println(treap);
 
-        for (Character n : toRemove) {
+        for (Integer n : toRemove) {
+            System.out.printf("REMOVING %s\n", n);
             treap.remove(n);
+            System.out.println("AFTER");
+            System.out.println(treap);
             Assertions.assertTrue(!treap.contains(n), "should not contain removed value");
         }
 
-        for (Character n : remaining) {
+        for (Integer n : remaining) {
             Assertions.assertTrue(treap.contains(n), "should contain remaining values");
         }
     }
 
     @Test
     void testToArray() {
-        final Treap<Character> treap = new Treap<>();
-        treap.addAll(randomData);
-
-        final Character[] array = new Character[randomDataSize];
+        final Integer[] array = new Integer[randomDataSize];
         treap.toArray(array);
 
-        for (Character i : array) {
+        for (Integer i : array) {
             if (i != null) {
                 Assertions.assertTrue(randomData.contains(i));
             }
         }
+    }
+
+    @Test
+    void testHeapProperty() {
+        final Queue<TreapNode<Integer>> stack = new ArrayDeque<>();
+        stack.add(treap.getRoot());
+
+        while (!stack.isEmpty()) {
+            TreapNode<Integer> current = stack.remove();
+            if (current.getLeft() != null) {
+                Assertions.assertTrue(current.getPriority() > current.getLeft().getPriority());
+                stack.add(current.getLeft());
+            }
+            if (current.getRight() != null) {
+                Assertions.assertTrue(current.getPriority() > current.getRight().getPriority());
+                stack.add(current.getRight());
+            }
+        }
+    }
+
+    @Test
+    void testBTreeProperty() {
+        final Queue<TreapNode<Integer>> stack = new ArrayDeque<>();
+        stack.add(treap.getRoot());
     }
 }
