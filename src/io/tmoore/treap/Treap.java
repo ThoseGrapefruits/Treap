@@ -13,18 +13,20 @@ import java.util.stream.Collectors;
 
 public class Treap<T extends Comparable<T>> implements Collection<T> {
 
-    private TreapNode<T> root;
+    private TreapNode<T> root = null;
 
     // CONSTRUCTORS
 
     @SuppressWarnings("WeakerAccess")
-    public Treap(TreapNode<T> root) {
-        this.root = root;
+    public Treap() {
     }
 
-    @SuppressWarnings("WeakerAccess")
-    public Treap() {
-        root = new TreapNode<>();
+    public Treap(Collection<T> fromCollection) {
+        addAll(fromCollection);
+    }
+
+    Treap(TreapNode<T> root) {
+        this.root = root;
     }
 
     TreapNode<T> getRoot() {
@@ -43,7 +45,7 @@ public class Treap<T extends Comparable<T>> implements Collection<T> {
 
     @Override
     public boolean isEmpty() {
-        return root.getValue() == null && root.getLeft() == null && root.getRight() == null;
+        return root == null;
     }
 
     @Override
@@ -80,6 +82,9 @@ public class Treap<T extends Comparable<T>> implements Collection<T> {
     }
 
     private boolean add(TreapNode<T> newNode) {
+        if (root == null) {
+            root = newNode;
+        }
         if (root.add(newNode)) {
             TreapNode<T> newRoot = root.balance();
             if (newRoot != root) {
@@ -109,6 +114,9 @@ public class Treap<T extends Comparable<T>> implements Collection<T> {
             TreapNode<T> newRoot = root.balance();
             if (newRoot != root) {
                 root = newRoot;
+            }
+            if (root.getPriority() == Integer.MIN_VALUE) {
+                root = null;
             }
             return true;
         }
@@ -165,7 +173,9 @@ public class Treap<T extends Comparable<T>> implements Collection<T> {
         StringBuilder sb = new StringBuilder();
         sb.append(getClass().getName());
         sb.append(System.lineSeparator());
-        root.toStringRecursive(sb, 0);
+        if (root != null) {
+            root.toStringRecursive(sb, 0);
+        }
         return sb.toString();
     }
 
