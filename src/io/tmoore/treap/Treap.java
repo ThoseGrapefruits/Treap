@@ -1,15 +1,13 @@
 package io.tmoore.treap;
 
+import com.sun.xml.internal.xsom.impl.scd.Iterators;
+
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.Iterator;
-import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 public class Treap<T extends Comparable<T>> implements Collection<T> {
 
@@ -21,6 +19,7 @@ public class Treap<T extends Comparable<T>> implements Collection<T> {
     public Treap() {
     }
 
+    @SuppressWarnings("WeakerAccess")
     public Treap(Collection<T> fromCollection) {
         addAll(fromCollection);
     }
@@ -34,13 +33,8 @@ public class Treap<T extends Comparable<T>> implements Collection<T> {
     }
 
     @Override
-    public void forEach(Consumer<? super T> action) {
-        root.forEach(action);
-    }
-
-    @Override
     public int size() {
-        return root.size();
+        return root == null ? 0 : root.size();
     }
 
     @Override
@@ -50,7 +44,8 @@ public class Treap<T extends Comparable<T>> implements Collection<T> {
 
     @Override
     public boolean contains(Object o) {
-        if (o == null || root.getValue() == null || root.getValue().getClass() != o.getClass()) {
+        if (o == null || root == null || root.getValue() == null
+            || root.getValue().getClass() != o.getClass()) {
             return false;
         }
 
@@ -61,19 +56,19 @@ public class Treap<T extends Comparable<T>> implements Collection<T> {
 
     @Override
     public Iterator<T> iterator() {
-        return root.iterator();
+        return root == null ? Iterators.empty() : new TreapIterator();
     }
 
     @Override
     public Object[] toArray() {
-        return root.toList().toArray();
+        return root == null ? new Object[0] : root.toList().toArray();
     }
 
     @Override
     public <T1> T1[] toArray(T1[] a) {
+        Objects.requireNonNull(a);
         //noinspection SuspiciousToArrayCall
-        return root.toList().toArray(a);
-
+        return root == null ? a : root.toList().toArray(a);
     }
 
     boolean add(T newItem, int priority) {
@@ -103,7 +98,8 @@ public class Treap<T extends Comparable<T>> implements Collection<T> {
 
     @Override
     public boolean remove(Object o) {
-        if (o == null || root.getValue() == null || root.getValue().getClass() != o.getClass()) {
+        if (o == null || root == null || root.getValue() == null
+            || root.getValue().getClass() != o.getClass()) {
             return false;
         }
 
@@ -165,7 +161,7 @@ public class Treap<T extends Comparable<T>> implements Collection<T> {
 
     @Override
     public void clear() {
-        root.clear();
+        root = null;
     }
 
     @Override
@@ -179,47 +175,53 @@ public class Treap<T extends Comparable<T>> implements Collection<T> {
         return sb.toString();
     }
 
-    private String verticalToString() {
-        int maxWidth = 0;
-        final List<List<TreapNode<T>>> levels = new ArrayList<>();
-        levels.add(new ArrayList<>(Collections.singletonList(root)));
 
-        boolean allNull;
-        do {
-            levels.add(new ArrayList<>());
-            final List<TreapNode<T>> previousLevel = levels.get(levels.size() - 2);
-            final List<TreapNode<T>> currentLevel = levels.get(levels.size() - 1);
-            allNull = true;
-            for (TreapNode<T> node : previousLevel) {
-                if (node == null) {
-                    currentLevel.add(null);
-                }
-                else {
-                    maxWidth = Math.max(maxWidth, node.toString().length());
-                    allNull = false;
-                    currentLevel.add(node.getLeft());
-                    currentLevel.add(node.getRight());
-                }
+    private class TreapIterator implements Iterator<T> {
+        Deque<TreapNode<T>> stack = new ArrayDeque<>(size());
+        T lastReturned = null;
+
+        private TreapIterator() {
+            TreapNode<T> root = Treap.this.getRoot();
+            if (root != null) {
+                stack.push(root);
             }
-        } while (!allNull);
+        }
 
-        final String formatString = "%1$" + maxWidth + "s";
-        final String tab = String.format(formatString, "");
-        final Deque<String> indent = new ArrayDeque<>(Collections.nCopies(
-                levels.size(), ""));
-        final StringBuilder spacer = new StringBuilder();
+        @Override
+        public boolean hasNext() {
+            return !stack.isEmpty();
+        }
 
-        return levels.stream()
-                     .map(treapNodes -> {
-                         indent.pop();
-                         spacer.append(tab.substring(0, tab.length() / 2 - 2));
-                         String result =  indent.stream().collect(Collectors.joining(tab))
-                                + treapNodes.stream()
-                                            .map(node -> node == null ? "" : node.toString())
-                                            .map(s -> String.format(formatString, s))
-                                            .collect(Collectors.joining(spacer));
-                         return result;
-                     })
-                     .collect(Collectors.joining(System.lineSeparator()));
+        @Override
+        public T next() {
+            if (stack.isEmpty()) {
+                throw new NoSuchElementException("The Iterator is empty.");
+            }
+
+            TreapNode<T> next = stack.pop();
+
+            if (next == null) {
+                throw new NoSuchElementException("The Iterator is empty.");
+            }
+
+            if (next.getRight() != null) {
+                stack.push(next.getRight());
+            }
+            if (next.getLeft() != null) {
+                stack.push(next.getLeft());
+            }
+            lastReturned = next.getValue();
+            return next.getValue();
+        }
+
+        @Override
+        public void remove() {
+            if (lastReturned == null) {
+                throw new IllegalStateException("remove called twice or before next was ever called");
+            }
+
+            Treap.this.remove(lastReturned);
+            lastReturned = null;
+        }
     }
 }

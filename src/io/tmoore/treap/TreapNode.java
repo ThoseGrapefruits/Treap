@@ -1,12 +1,12 @@
 package io.tmoore.treap;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Random;
 
-class TreapNode<T extends Comparable<T>> implements Iterable<T> {
+class TreapNode<T extends Comparable<T>> {
+    static final String NULL_NODE_STRING = "----";
 
     private static final Random random = new Random();
 
@@ -24,7 +24,7 @@ class TreapNode<T extends Comparable<T>> implements Iterable<T> {
     /**
      * The value held by {@link this}.
      */
-    private T value;
+    private final T value;
 
     T getValue() {
         return value;
@@ -39,15 +39,12 @@ class TreapNode<T extends Comparable<T>> implements Iterable<T> {
         return priority;
     }
 
-    TreapNode() {
-        this(null, null, null);
-    }
-
     private TreapNode(T value, TreapNode<T> right, TreapNode<T> left) {
         this(value, random.nextInt(), right, left);
     }
 
     TreapNode(T value, int priority, TreapNode<T> right, TreapNode<T> left) {
+        Objects.requireNonNull(value);
         this.value = value;
         this.priority = priority;
         this.left = left;
@@ -64,11 +61,6 @@ class TreapNode<T extends Comparable<T>> implements Iterable<T> {
 
     int size() {
         return 1 + (left == null ? 0 : left.size()) + (right == null ? 0 : right.size());
-    }
-
-    @Override
-    public Iterator<T> iterator() {
-        return toList().iterator();
     }
 
     List<T> toList() {
@@ -95,10 +87,6 @@ class TreapNode<T extends Comparable<T>> implements Iterable<T> {
     }
 
     boolean add(TreapNode<T> newNode) {
-        if (value == null) {  // Only for root
-            value = newNode.value;
-        }
-
         if (newNode.value.equals(value)) {
             return false;
         }
@@ -177,9 +165,6 @@ class TreapNode<T extends Comparable<T>> implements Iterable<T> {
 
     boolean contains(T item) {
         Objects.requireNonNull(item);
-        if (value == null) {
-            return false;
-        }
         if (value.equals(item)) {
             return true;
         }
@@ -190,6 +175,7 @@ class TreapNode<T extends Comparable<T>> implements Iterable<T> {
     }
 
     boolean remove(T item) {
+        Objects.requireNonNull(item);
         if (item.equals(value)) {
             priority = Integer.MIN_VALUE;
             return true;
@@ -197,12 +183,6 @@ class TreapNode<T extends Comparable<T>> implements Iterable<T> {
 
         return (left != null && left.remove(item))
                || (right != null && right.remove(item));
-    }
-
-    void clear() {
-        value = null;
-        left = null;
-        right = null;
     }
 
     void toStringRecursive(StringBuilder sb, int depth) {
@@ -217,14 +197,14 @@ class TreapNode<T extends Comparable<T>> implements Iterable<T> {
 
         if (right == null) {
             sb.append(String.format("%1$" + ((depth + 1) * 4) + "s", ""))
-              .append("----").append(System.lineSeparator());
+              .append(NULL_NODE_STRING).append(System.lineSeparator());
         }
         else {
             right.toStringRecursive(sb, depth + 1);
         }
         if (left == null) {
             sb.append(String.format("%1$" + ((depth + 1) * 4) + "s", ""))
-              .append("----").append(System.lineSeparator());
+              .append(NULL_NODE_STRING).append(System.lineSeparator());
         }
         else {
             left.toStringRecursive(sb, depth + 1);
@@ -233,20 +213,7 @@ class TreapNode<T extends Comparable<T>> implements Iterable<T> {
 
     @Override
     public String toString() {
-        if (value == null) {
-            return "Empty Treap";
-        }
-
         return String.format("%s (%d)", value, priority);
-    }
-
-    public int depth() {
-        if (value == null || (left == null && right == null)) {
-            return 0;
-        }
-        return 1 + Math.max(
-                left == null ? 0 : left.depth(),
-                right == null ? 0 : right.depth());
     }
 }
 
