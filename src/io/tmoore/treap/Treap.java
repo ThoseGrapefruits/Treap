@@ -136,31 +136,27 @@ public class Treap<T extends Comparable<T>> implements Collection<T> {
 
     @Override
     public boolean addAll(Collection<? extends T> c) {
-        boolean changed = false;
-        for (T item : c) {
-            changed |= add(item, false);
-        }
-        return changed;
+        return Objects.requireNonNull(c)
+                      .stream()
+                      .map(this::add)
+                      .reduce(false, Boolean::logicalOr);
     }
 
     @Override
     public boolean removeAll(Collection<?> c) {
-        boolean changed = false;
-        for (Object item : c) {
-            changed |= remove(item);
-        }
-        return changed;
+        return Objects.requireNonNull(c)
+                      .stream()
+                      .map(this::remove)
+                      .reduce(false, Boolean::logicalOr);
     }
 
     @Override
     public boolean retainAll(Collection<?> c) {
-        boolean changed = false;
-        for (T item : this) {
-            if (!c.contains(item)) {
-                changed |= remove(item);
-            }
-        }
-        return changed;
+        Objects.requireNonNull(c);
+        return stream()
+                .filter(element -> !c.contains(element))
+                .map(this::remove)
+                .reduce(false, Boolean::logicalOr);
     }
 
     @Override

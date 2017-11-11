@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 
 class TreapPerformanceTests {
     private static final Random random = new Random();
-    private static final int[] scales = {50_000, 100_000, 150_000, 200_000};
+    private static final int[] scales = {30_000, 50_000, 70_000};
     private static final Integer[] randomData = new Integer[Arrays.stream(scales).max().getAsInt() + 1];
     private static List<Treap<Integer>> treaps;
     private static int[] randomSelections;
@@ -58,8 +58,24 @@ class TreapPerformanceTests {
         testSearchTime(2);
     }
 
+    private void testRemoveAddTime(int i) {
+        Treap<Integer> treap = treaps.get(i);
+        Assertions.assertTrue(treap.remove(randomSelections[i]));
+        Assertions.assertTrue(treap.add(randomSelections[i]));
+    }
+
     @RepeatedTest(1000)
-    void testSearchTime_200_000() {
-        testSearchTime(3);
+    void testRemoveTime_50_000() {
+        testRemoveAddTime(0);
+    }
+
+    @RepeatedTest(1000)
+    void testRemoveTime_100_000() {
+        testRemoveAddTime(1);
+    }
+
+    @RepeatedTest(1000)
+    void testRemoveTime_150_000() {
+        testRemoveAddTime(2);
     }
 }
