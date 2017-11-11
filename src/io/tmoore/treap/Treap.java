@@ -233,19 +233,38 @@ public class Treap<T extends Comparable<T>> implements Collection<T> {
         }
     }
 
+    /**
+     * {@link Spliterator} for parallel BFS traversal of a {@link TreapNode} and its children.
+     */
     private class TreapSpliterator implements Spliterator<T> {
-        Queue<TreapNode<T>> queue = new PriorityQueue<>();
+        private Queue<TreapNode<T>> queue = new PriorityQueue<>();
+
+        /**
+         * {@link TreapSpliterator} runs into trouble when {@link #trySplit()} is called but the
+         * {@link #queue} only contains the root node. If it creates a new {@link TreapSpliterator}
+         * with one of root's children, but keeps {@link this} as-is, then it will iterate over the
+         * chosen child (and all of its children) twice. If it sets {@link this} on, say, the left
+         * child, and a new {@link TreapSpliterator} on the right child, then it will never iterate
+         * over root's value.
+         */
+        private T unprocessedParent = null;
 
         TreapSpliterator(TreapNode<T> root) {
             queue.add(root);
         }
 
         TreapSpliterator() {
-            queue.add(Treap.this.root);
+            this(Treap.this.root);
         }
 
         @Override
         public boolean tryAdvance(Consumer<? super T> action) {
+            if (unprocessedParent != null) {
+                action.accept(unprocessedParent);
+                unprocessedParent = null;
+                return true;
+            }
+
             if (queue.isEmpty()) {
                 return false;
             }
@@ -266,20 +285,33 @@ public class Treap<T extends Comparable<T>> implements Collection<T> {
 
         @Override
         public Spliterator<T> trySplit() {
-            if (queue.size() < 2) {
+            if (queue.size() == 0) {
                 return null;
             }
+
+            if (queue.size() == 1) {
+                TreapNode<T> current = queue.remove();
+                unprocessedParent = current.getValue();
+                if (current.getRight() != null) {
+                    queue.add(current.getRight());
+                }
+
+                if (current.getLeft() != null) {
+                    queue.add(current.getLeft());
+                }
+            }
+
             return new TreapSpliterator(queue.remove());
         }
 
         @Override
         public long estimateSize() {
-            return queue.peek().leftDepth();
+            return getExactSizeIfKnown();
         }
 
         @Override
         public long getExactSizeIfKnown() {
-            return queue.peek().size();
+            return (unprocessedParent == null ? 0 : 1) + (queue.isEmpty() ? 0 : queue.peek().size());
         }
 
         @Override
@@ -289,7 +321,7 @@ public class Treap<T extends Comparable<T>> implements Collection<T> {
 
         @Override
         public int characteristics() {
-            return DISTINCT | SIZED | SUBSIZED | SORTED;
+            return DISTINCT | NONNULL | SIZED | SUBSIZED | SORTED;
         }
     }
 }

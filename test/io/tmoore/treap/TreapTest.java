@@ -3,7 +3,9 @@ package io.tmoore.treap;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -14,6 +16,7 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.Spliterator;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class TreapTest extends TreapBaseTest {
 
     // CORE COLLECTION METHOD TESTS
@@ -204,8 +207,6 @@ class TreapTest extends TreapBaseTest {
     @Test
     void testRootSpliterator() {
         Spliterator<Integer> spliterator = treap.spliterator();
-        Assertions.assertNull(spliterator.trySplit());
-        spliterator.tryAdvance(integer -> {} );
         Assumptions.assumeTrue(spliterator.trySplit().tryAdvance(
                 integer -> Assertions.assertTrue(
                         integer.equals(treap.getRoot().getRight().getValue())
@@ -213,10 +214,24 @@ class TreapTest extends TreapBaseTest {
     }
 
     @Test
-    void testParallelStream() {
-        Assertions.assertFalse(Double.isNaN(treap.parallelStream()
-                                                 .mapToInt(Integer::intValue)
-                                                 .average()
-                                                 .orElse(Double.NaN)));
+    void testParallelStreamParallelism() throws InterruptedException {
+        Assumptions.assumeTrue(treap.parallelStream().isParallel());
+        final int waitTime = 100;
+
+        Assertions.assertTimeout(
+                Duration.ofMillis(waitTime * treap.size() / Runtime.getRuntime().availableProcessors()),
+                () -> Assertions.assertFalse(
+                        Double.isNaN(treap.parallelStream()
+                                          .mapToInt(Integer::intValue)
+                                          .peek(operand -> {
+                                              try {
+                                                  Thread.sleep(waitTime);
+                                              }
+                                              catch (InterruptedException ignored) {
+                                              }
+                                          })
+                                          .average()
+                                          .orElse(Double.NaN))),
+                "Parallel stream should splitting and operate on all processors");
     }
 }
