@@ -3,7 +3,6 @@ package io.tmoore.treap;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.RepeatedTest;
-import org.junit.jupiter.api.RepetitionInfo;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -39,10 +38,28 @@ class TreapPerformanceTests {
                                  .toArray();
     }
 
-    @RepeatedTest(4)
-    void testSearchTime(RepetitionInfo repetitionInfo) {
-        int index = repetitionInfo.getCurrentRepetition() - 1;
-        Treap<Integer> treap = treaps.get(index);
-        Assertions.assertTrue(treap.contains(randomSelections[index]));
+    private void testSearchTime(int i) {
+        Treap<Integer> treap = treaps.get(i);
+        Assertions.assertTrue(treap.contains(randomSelections[i]));
+    }
+
+    @RepeatedTest(1000)
+    void testSearchTime_50_000() {
+        testSearchTime(0);
+    }
+
+    @RepeatedTest(1000)
+    void testSearchTime_100_000() {
+        testSearchTime(1);
+    }
+
+    @RepeatedTest(1000)
+    void testSearchTime_150_000() {
+        testSearchTime(2);
+    }
+
+    @RepeatedTest(1000)
+    void testSearchTime_200_000() {
+        testSearchTime(3);
     }
 }
