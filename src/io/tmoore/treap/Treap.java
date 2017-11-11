@@ -247,7 +247,9 @@ public class Treap<T extends Comparable<T>> implements Collection<T> {
         private T unprocessedParent = null;
 
         TreapSpliterator(TreapNode<T> root) {
-            queue.add(root);
+            if (root != null) {
+                queue.add(root);
+            }
         }
 
         TreapSpliterator() {

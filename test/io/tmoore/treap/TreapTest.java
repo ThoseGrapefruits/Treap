@@ -214,6 +214,12 @@ class TreapTest extends TreapBaseTest {
     }
 
     @Test
+    void testEmptySpliterator() {
+        treap.clear();
+        Assertions.assertNull(treap.spliterator().trySplit());
+    }
+
+    @Test
     void testParallelStreamParallelism() throws InterruptedException {
         Assumptions.assumeTrue(treap.parallelStream().isParallel());
         final int waitTime = 100;
