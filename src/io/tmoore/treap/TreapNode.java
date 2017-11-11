@@ -4,8 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Random;
+import java.util.function.BiFunction;
 
-class TreapNode<T extends Comparable<T>> {
+class TreapNode<T extends Comparable<T>> implements Comparable<TreapNode<T>> {
     static final String NULL_NODE_STRING = "----";
 
     private static final Random random = new Random();
@@ -60,7 +61,7 @@ class TreapNode<T extends Comparable<T>> {
     }
 
     int size() {
-        return 1 + (left == null ? 0 : left.size()) + (right == null ? 0 : right.size());
+        return aggregateDepth(Integer::sum);
     }
 
     List<T> toList() {
@@ -214,6 +215,48 @@ class TreapNode<T extends Comparable<T>> {
     @Override
     public String toString() {
         return String.format("%s (%d)", value, priority);
+    }
+
+    @Override
+    public int compareTo(TreapNode<T> o) {
+        return Integer.compare(priority, o.priority);
+    }
+
+    /**
+     * The length of the longest branch of the tree.
+     *
+     * @return length of the longest branch of the tree;
+     */
+    int maxDepth() {
+        return aggregateDepth(Math::max);
+    }
+
+    /**
+     * The length of the shortest branch of the tree.
+     *
+     * @return length of the shortest branch of the tree;
+     */
+    int minDepth() {
+        return aggregateDepth(Math::min);
+    }
+
+    /**
+     * Tail-recursive reducer of depth using the given {@link BiFunction}.
+     * @param consumer the {@link Integer} aggregator
+     * @return the processed depth
+     */
+    private int aggregateDepth(BiFunction<Integer, Integer, Integer> consumer) {
+        return 1 + consumer.apply(left == null ? 0 : left.aggregateDepth(consumer),
+                              right == null ? 0 : right.aggregateDepth(consumer));
+    }
+
+    /**
+     * A fast estimate of the depth of the tree, assuming the tree is fairly balanced. Only considers leftmost depth.
+     *
+     * @return estimated depth of the tree, from the height of the left edge.
+     */
+    int leftDepth() {
+        return 1 + (left == null ? 0 : left.leftDepth());
     }
 }
 

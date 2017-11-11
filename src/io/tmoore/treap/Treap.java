@@ -4,10 +4,15 @@ import com.sun.xml.internal.xsom.impl.scd.Iterators;
 
 import java.util.ArrayDeque;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.PriorityQueue;
+import java.util.Queue;
+import java.util.Spliterator;
+import java.util.function.Consumer;
 
 public class Treap<T extends Comparable<T>> implements Collection<T> {
 
@@ -57,6 +62,11 @@ public class Treap<T extends Comparable<T>> implements Collection<T> {
     @Override
     public Iterator<T> iterator() {
         return root == null ? Iterators.empty() : new TreapIterator();
+    }
+
+    @Override
+    public Spliterator<T> spliterator() {
+        return new TreapSpliterator();
     }
 
     @Override
@@ -184,9 +194,8 @@ public class Treap<T extends Comparable<T>> implements Collection<T> {
         T lastReturned = null;
 
         private TreapIterator() {
-            TreapNode<T> root = Treap.this.getRoot();
-            if (root != null) {
-                stack.push(root);
+            if (Treap.this.root != null) {
+                stack.push(Treap.this.root);
             }
         }
 
@@ -202,10 +211,6 @@ public class Treap<T extends Comparable<T>> implements Collection<T> {
             }
 
             TreapNode<T> next = stack.pop();
-
-            if (next == null) {
-                throw new NoSuchElementException("The Iterator is empty.");
-            }
 
             if (next.getRight() != null) {
                 stack.push(next.getRight());
@@ -225,6 +230,66 @@ public class Treap<T extends Comparable<T>> implements Collection<T> {
 
             Treap.this.remove(lastReturned);
             lastReturned = null;
+        }
+    }
+
+    private class TreapSpliterator implements Spliterator<T> {
+        Queue<TreapNode<T>> queue = new PriorityQueue<>();
+
+        TreapSpliterator(TreapNode<T> root) {
+            queue.add(root);
+        }
+
+        TreapSpliterator() {
+            queue.add(Treap.this.root);
+        }
+
+        @Override
+        public boolean tryAdvance(Consumer<? super T> action) {
+            if (queue.isEmpty()) {
+                return false;
+            }
+
+            TreapNode<T> next = queue.remove();
+
+            if (next.getRight() != null) {
+                queue.add(next.getRight());
+            }
+
+            if (next.getLeft() != null) {
+                queue.add(next.getLeft());
+            }
+
+            action.accept(next.getValue());
+            return true;
+        }
+
+        @Override
+        public Spliterator<T> trySplit() {
+            if (queue.size() < 2) {
+                return null;
+            }
+            return new TreapSpliterator(queue.remove());
+        }
+
+        @Override
+        public long estimateSize() {
+            return queue.peek().leftDepth();
+        }
+
+        @Override
+        public long getExactSizeIfKnown() {
+            return queue.peek().size();
+        }
+
+        @Override
+        public Comparator<? super T> getComparator() {
+            return null;
+        }
+
+        @Override
+        public int characteristics() {
+            return DISTINCT | SIZED | SUBSIZED | SORTED;
         }
     }
 }

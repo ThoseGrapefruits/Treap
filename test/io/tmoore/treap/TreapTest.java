@@ -1,7 +1,7 @@
 package io.tmoore.treap;
 
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -12,11 +12,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.Spliterator;
 
 class TreapTest extends TreapBaseTest {
 
-    @RepeatedTest(10)
-    void testAddRemove() {
+    // CORE COLLECTION METHOD TESTS
+
+    @Test
+    void testRemove() {
         List<Integer> randomDataList = new ArrayList<>(randomData);
         int split = randomData.size() / 2;
         List<Integer> toRemove = randomDataList.subList(0, split);
@@ -79,6 +82,16 @@ class TreapTest extends TreapBaseTest {
     }
 
     @Test
+    void testToStringEmpty() {
+        Treap<Character> treap = new Treap<>();
+        String s = treap.toString();
+        String[] split = s.split(System.lineSeparator());
+        Assertions.assertEquals(2, split.length);
+        Assertions.assertTrue(split[0].contains(treap.getClass().getName()));
+        Assertions.assertEquals(TreapNode.NULL_NODE_STRING, split[1]);
+    }
+
+    @Test
     void testToStringSingle() {
         @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
         Treap<Character> treap = new Treap<>(new TreapNode<>('A', 10));
@@ -122,9 +135,34 @@ class TreapTest extends TreapBaseTest {
     }
 
     @Test
+    void testContainsEmptyTreap() {
+        treap.clear();
+        Assertions.assertFalse(treap.contains(0));
+    }
+
+    @Test
+    void testContainsAll() {
+        Assumptions.assumeTrue(treap.containsAll(randomData));
+        while (!randomData.add(random.nextInt())) {
+            // Make sure we add a single value, in case we hit repeated value(s).
+        }
+        Assertions.assertFalse(treap.containsAll(randomData));
+    }
+
+    @Test
     void testClear() {
         treap.clear();
         Assertions.assertTrue(treap.isEmpty());
+    }
+
+    @Test
+    void testSize() {
+        Assertions.assertEquals(RANDOM_DATA_SIZE, treap.size());
+    }
+
+    @Test
+    void testSizeEmptyTreap() {
+        Assertions.assertEquals(0, new Treap<>().size());
     }
 
 
@@ -154,9 +192,31 @@ class TreapTest extends TreapBaseTest {
         Assertions.assertThrows(IllegalStateException.class, iterator::remove);
     }
 
-    @Test
+    @Test()
     void testIteratorNextOnEmptyTreap() {
         Iterator<Integer> iterator = new Treap<Integer>().iterator();
         Assertions.assertThrows(NoSuchElementException.class, iterator::next);
+    }
+
+
+    // SPLITERATOR
+
+    @Test
+    void testRootSpliterator() {
+        Spliterator<Integer> spliterator = treap.spliterator();
+        Assertions.assertNull(spliterator.trySplit());
+        spliterator.tryAdvance(integer -> {} );
+        Assumptions.assumeTrue(spliterator.trySplit().tryAdvance(
+                integer -> Assertions.assertTrue(
+                        integer.equals(treap.getRoot().getRight().getValue())
+                        || integer.equals(treap.getRoot().getLeft().getValue()))));
+    }
+
+    @Test
+    void testParallelStream() {
+        Assertions.assertFalse(Double.isNaN(treap.parallelStream()
+                                                 .mapToInt(Integer::intValue)
+                                                 .average()
+                                                 .orElse(Double.NaN)));
     }
 }
