@@ -14,11 +14,9 @@ class TreapBaseTest {
 
     @BeforeEach
     void setupEach() {
-        Set<Integer> randomDataSet = new HashSet<>(RANDOM_DATA_SIZE);
-        while (randomDataSet.size() < RANDOM_DATA_SIZE) {
-            randomDataSet.add(random.nextInt(255));
+        while (randomData.size() < RANDOM_DATA_SIZE) {
+            randomData.add(random.nextInt(Integer.MAX_VALUE));
         }
-        randomData.addAll(randomDataSet);
-        treap.addAll(randomDataSet);
+        treap.addAll(randomData);
     }
 }

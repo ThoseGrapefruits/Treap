@@ -73,14 +73,14 @@ public class Treap<T extends Comparable<T>> implements Collection<T> {
 
     boolean add(T newItem, int priority) {
         Objects.requireNonNull(newItem);
-        return add(new TreapNode<>(newItem, priority));
+        return add(new TreapNode<>(newItem, priority), true);
     }
 
-    private boolean add(TreapNode<T> newNode) {
+    private boolean add(TreapNode<T> newNode, boolean balance) {
         if (root == null) {
             root = newNode;
         }
-        if (root.add(newNode)) {
+        if (root.add(newNode) && balance) {
             TreapNode<T> newRoot = root.balance();
             if (newRoot != root) {
                 root = newRoot;
@@ -92,8 +92,12 @@ public class Treap<T extends Comparable<T>> implements Collection<T> {
 
     @Override
     public boolean add(T newItem) {
+        return add(newItem, true);
+    }
+
+    private boolean add(T newItem, boolean balance) {
         Objects.requireNonNull(newItem);
-        return add(new TreapNode<>(newItem));
+        return add(new TreapNode<>(newItem), true);
     }
 
     @Override
@@ -134,7 +138,7 @@ public class Treap<T extends Comparable<T>> implements Collection<T> {
     public boolean addAll(Collection<? extends T> c) {
         boolean changed = false;
         for (T item : c) {
-            changed |= add(item);
+            changed |= add(item, false);
         }
         return changed;
     }
@@ -169,7 +173,10 @@ public class Treap<T extends Comparable<T>> implements Collection<T> {
         StringBuilder sb = new StringBuilder();
         sb.append(getClass().getName());
         sb.append(System.lineSeparator());
-        if (root != null) {
+        if (root == null) {
+            sb.append(TreapNode.NULL_NODE_STRING);
+        }
+        else {
             root.toStringRecursive(sb, 0);
         }
         return sb.toString();

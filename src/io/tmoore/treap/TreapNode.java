@@ -40,7 +40,7 @@ class TreapNode<T extends Comparable<T>> {
     }
 
     private TreapNode(T value, TreapNode<T> right, TreapNode<T> left) {
-        this(value, random.nextInt(), right, left);
+        this(value, random.nextInt(Integer.MAX_VALUE - 2) + 1, right, left);
     }
 
     TreapNode(T value, int priority, TreapNode<T> right, TreapNode<T> left) {
