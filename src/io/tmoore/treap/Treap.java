@@ -1,7 +1,5 @@
 package io.tmoore.treap;
 
-import com.sun.xml.internal.xsom.impl.scd.Iterators;
-
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Comparator;
@@ -61,7 +59,7 @@ public class Treap<T extends Comparable<T>> implements Collection<T> {
 
     @Override
     public Iterator<T> iterator() {
-        return root == null ? Iterators.empty() : new TreapIterator();
+        return new TreapIterator();
     }
 
     @Override
