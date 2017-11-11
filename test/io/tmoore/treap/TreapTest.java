@@ -195,7 +195,7 @@ class TreapTest extends TreapBaseTest {
         Assertions.assertThrows(IllegalStateException.class, iterator::remove);
     }
 
-    @Test()
+    @Test
     void testIteratorNextOnEmptyTreap() {
         Iterator<Integer> iterator = new Treap<Integer>().iterator();
         Assertions.assertThrows(NoSuchElementException.class, iterator::next);

@@ -83,14 +83,14 @@ public class Treap<T extends Comparable<T>> implements Collection<T> {
 
     boolean add(T newItem, int priority) {
         Objects.requireNonNull(newItem);
-        return add(new TreapNode<>(newItem, priority), true);
+        return add(new TreapNode<>(newItem, priority));
     }
 
-    private boolean add(TreapNode<T> newNode, boolean balance) {
+    private boolean add(TreapNode<T> newNode) {
         if (root == null) {
             root = newNode;
         }
-        if (root.add(newNode) && balance) {
+        if (root.add(newNode)) {
             TreapNode<T> newRoot = root.balance();
             if (newRoot != root) {
                 root = newRoot;
@@ -102,12 +102,8 @@ public class Treap<T extends Comparable<T>> implements Collection<T> {
 
     @Override
     public boolean add(T newItem) {
-        return add(newItem, true);
-    }
-
-    private boolean add(T newItem, boolean balance) {
         Objects.requireNonNull(newItem);
-        return add(new TreapNode<>(newItem), true);
+        return add(new TreapNode<>(newItem));
     }
 
     @Override
@@ -245,7 +241,8 @@ public class Treap<T extends Comparable<T>> implements Collection<T> {
          * with one of root's children, but keeps {@link this} as-is, then it will iterate over the
          * chosen child (and all of its children) twice. If it sets {@link this} on, say, the left
          * child, and a new {@link TreapSpliterator} on the right child, then it will never iterate
-         * over root's value.
+         * over root's value. This serves as a marker for when {@link this} has split but the parent
+         * value still has not been processed.
          */
         private T unprocessedParent = null;
 
