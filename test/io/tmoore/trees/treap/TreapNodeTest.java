@@ -1,4 +1,4 @@
-package io.tmoore.treap;
+package io.tmoore.trees.treap;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;

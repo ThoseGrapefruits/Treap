@@ -1,4 +1,4 @@
-package io.tmoore.treap;
+package io.tmoore.trees.treap;
 
 import java.util.ArrayDeque;
 import java.util.Collection;
