@@ -8,6 +8,7 @@ import java.util.function.BiFunction;
 
 import io.tmoore.trees.interfaces.Paintable;
 import io.tmoore.trees.interfaces.TreeNode;
+import javafx.scene.canvas.GraphicsContext;
 
 class TreapNode<T extends Comparable<T>> implements Comparable<TreapNode<T>>, TreeNode<T>, Paintable {
 
@@ -333,6 +334,33 @@ class TreapNode<T extends Comparable<T>> implements Comparable<TreapNode<T>>, Tr
     @Override
     public int compareTo(TreapNode<T> o) {
         return Integer.compare(priority, o.priority);
+    }
+
+
+    // Rendering
+
+    public void draw(GraphicsContext gc, int width, int x, int y) {
+        final int shift = width / 2;
+        final int xDelta = 50, yDelta = 50;
+        final int diameter = 20;
+
+        if (left != null) {
+            int xLeft = x - 1;
+            final int xFactor = (int)Math.pow(2, -x);
+            int yLeft = y + 1;
+            gc.strokeLine(xFactor * xDelta + shift, y * yDelta, xFactor / 2 + shift, yLeft);
+            left.draw(gc, width, xLeft, yLeft);
+        }
+
+        if (right != null) {
+            int xRight = x + 1;
+            final int xFactor = (int)Math.pow(2, x);
+            int yRight = y + 1;
+            gc.strokeLine(xFactor * xDelta + shift, y, xFactor * 2 + shift, yRight);
+            right.draw(gc, width, xRight, yRight);
+        }
+
+        gc.fillOval(x + shift, y, diameter, diameter);
     }
 }
 

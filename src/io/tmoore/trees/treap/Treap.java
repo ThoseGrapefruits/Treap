@@ -9,10 +9,13 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.PriorityQueue;
 import java.util.Queue;
+import java.util.Set;
 import java.util.Spliterator;
 import java.util.function.Consumer;
 
-public class Treap<T extends Comparable<T>> implements Collection<T> {
+import javafx.scene.canvas.Canvas;
+
+public class Treap<T extends Comparable<T>> implements Set<T> {
 
     private TreapNode<T> root = null;
 
@@ -182,6 +185,11 @@ public class Treap<T extends Comparable<T>> implements Collection<T> {
         return sb.toString();
     }
 
+    public void draw(Canvas canvas, int width, int x, int y) {
+        if (root != null) {
+            root.draw(canvas.getGraphicsContext2D(), width, x, y);
+        }
+    }
 
     private class TreapIterator implements Iterator<T> {
         Deque<TreapNode<T>> stack = new ArrayDeque<>(size());
@@ -223,6 +231,7 @@ public class Treap<T extends Comparable<T>> implements Collection<T> {
             }
 
             Treap.this.remove(lastReturned);
+            stack.remove(lastReturned);
             lastReturned = null;
         }
     }
