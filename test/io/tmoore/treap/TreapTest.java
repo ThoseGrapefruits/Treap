@@ -219,8 +219,14 @@ class TreapTest extends TreapBaseTest {
         Assertions.assertNull(treap.spliterator().trySplit());
     }
 
+    /**
+     * This test means nothing on a single-core machine, but otherwise, it will verify that the tree
+     * is in fact being streamed in parallel. It verifies that the runtime makes sense for how many
+     * cores are simultaneously streaming the treap. This assumes that all cores are being used by
+     * {@link Treap#parallelStream()}, which seems to be the standard behaviour.
+     */
     @Test
-    void testParallelStreamParallelism() throws InterruptedException {
+    void testParallelStreamParallelism() {
         Assumptions.assumeTrue(treap.parallelStream().isParallel());
         final int waitTime = 100;
 
