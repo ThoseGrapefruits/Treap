@@ -1,6 +1,5 @@
 package io.tmoore.treap;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Random;
@@ -14,28 +13,42 @@ class TreapNode<T extends Comparable<T>> implements Comparable<TreapNode<T>> {
     private TreapNode<T> left;
     private TreapNode<T> right;
 
+    /**
+     * Get the left child of this {@link TreapNode}.
+     *
+     * @return the left child
+     */
     TreapNode<T> getLeft() {
         return left;
     }
 
+    /**
+     * Get the right child of this {@link TreapNode}.
+     *
+     * @return the right child
+     */
     TreapNode<T> getRight() {
         return right;
     }
 
-    /**
-     * The value held by {@link this}.
-     */
     private final T value;
 
+    /**
+     * Get the value held by this {@link TreapNode}.
+     *
+     * @return the held value
+     */
     T getValue() {
         return value;
     }
 
-    /**
-     * The priority of the node in the tree. Always increase as one moves up in the tree.
-     */
     private int priority;
 
+    /**
+     * The heap priority of the node in the tree. Always decreasing with depth.
+     *
+     * @return the heap priority of the node in the tree.
+     */
     int getPriority() {
         return priority;
     }
@@ -64,18 +77,12 @@ class TreapNode<T extends Comparable<T>> implements Comparable<TreapNode<T>> {
         return aggregateDepth(Integer::sum);
     }
 
-    List<T> toList() {
-        ArrayList<T> collector = new ArrayList<>();
-        addContentsToList(collector);
-        return collector;
-    }
-
     /**
-     * Collect the contents of {@link this} and all child {@link TreapNode}s into the given list.
+     * Collect the contents of this and all child {@link TreapNode}s into the given list.
      *
      * @param list to collect contents into
      */
-    private void addContentsToList(List<T> list) {
+     void addContentsToList(List<T> list) {
         if (left != null) {
             left.addContentsToList(list);
         }

@@ -1,16 +1,20 @@
 package io.tmoore.treap;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Deque;
 import java.util.Iterator;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.Spliterator;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 public class Treap<T extends Comparable<T>> implements Collection<T> {
 
@@ -35,6 +39,13 @@ public class Treap<T extends Comparable<T>> implements Collection<T> {
         return root;
     }
 
+    @SuppressWarnings("WeakerAccess")
+    public List<T> asList() {
+        ArrayList<T> collector = new ArrayList<>();
+        root.addContentsToList(collector);
+        return collector;
+    }
+
     @Override
     public int size() {
         return root == null ? 0 : root.size();
@@ -57,6 +68,11 @@ public class Treap<T extends Comparable<T>> implements Collection<T> {
         return root.contains(item);
     }
 
+    /**
+     * Traverses {@link Treap} elements in natural ascending order.
+     *
+     * {@inheritDoc}
+     */
     @Override
     public Iterator<T> iterator() {
         return new TreapIterator();
@@ -68,15 +84,25 @@ public class Treap<T extends Comparable<T>> implements Collection<T> {
     }
 
     @Override
+    public Stream<T> stream() {
+        return StreamSupport.stream(this::spliterator, TreapSpliterator.CHARACTERISTICS, false);
+    }
+
+    @Override
+    public Stream<T> parallelStream() {
+        return StreamSupport.stream(this::spliterator, TreapSpliterator.CHARACTERISTICS, true);
+    }
+
+    @Override
     public Object[] toArray() {
-        return root == null ? new Object[0] : root.toList().toArray();
+        return root == null ? new Object[0] : asList().toArray();
     }
 
     @Override
     public <T1> T1[] toArray(T1[] a) {
         Objects.requireNonNull(a);
         //noinspection SuspiciousToArrayCall
-        return root == null ? a : root.toList().toArray(a);
+        return root == null ? a : asList().toArray(a);
     }
 
     boolean add(T newItem, int priority) {
@@ -140,27 +166,38 @@ public class Treap<T extends Comparable<T>> implements Collection<T> {
 
     @Override
     public boolean addAll(Collection<? extends T> c) {
-        return Objects.requireNonNull(c)
-                      .stream()
-                      .map(this::add)
-                      .reduce(false, Boolean::logicalOr);
+        boolean changed = false;
+
+        for (T item : Objects.requireNonNull(c)) {
+            changed |= add(item);
+        }
+
+        return changed;
     }
 
     @Override
     public boolean removeAll(Collection<?> c) {
-        return Objects.requireNonNull(c)
-                      .stream()
-                      .map(this::remove)
-                      .reduce(false, Boolean::logicalOr);
+        boolean changed = false;
+
+        for (Object item : Objects.requireNonNull(c)) {
+            changed |= remove(item);
+        }
+
+        return changed;
     }
 
     @Override
     public boolean retainAll(Collection<?> c) {
         Objects.requireNonNull(c);
-        return stream()
-                .filter(element -> !c.contains(element))
-                .map(this::remove)
-                .reduce(false, Boolean::logicalOr);
+        boolean changed = false;
+
+        for (T item : this) {
+            if (!c.contains(item)) {
+                changed |= this.remove(item);
+            }
+        }
+
+        return changed;
     }
 
     @Override
@@ -183,6 +220,10 @@ public class Treap<T extends Comparable<T>> implements Collection<T> {
     }
 
 
+    /**
+     * A left, depth-first tree iterator which iterates over the elements of the parent {@link Treap}
+     * in natural ascending order.
+     */
     private class TreapIterator implements Iterator<T> {
         Deque<TreapNode<T>> stack = new ArrayDeque<>(size());
         T lastReturned = null;
@@ -231,16 +272,19 @@ public class Treap<T extends Comparable<T>> implements Collection<T> {
      * {@link Spliterator} for parallel BFS traversal of a {@link TreapNode} and its children.
      */
     private class TreapSpliterator implements Spliterator<T> {
-        private Queue<TreapNode<T>> queue = new PriorityQueue<>();
+        private static final int CHARACTERISTICS = DISTINCT | NONNULL | SIZED | SUBSIZED;
+        private final Queue<TreapNode<T>> queue = new PriorityQueue<>();
 
         /**
+         * Implementation Note:
+         *
          * {@link TreapSpliterator} runs into trouble when {@link #trySplit()} is called but the
          * {@link #queue} only contains the root node. If it creates a new {@link TreapSpliterator}
-         * with one of root's children, but keeps {@link this} as-is, then it will iterate over the
-         * chosen child (and all of its children) twice. If it sets {@link this} on, say, the left
-         * child, and a new {@link TreapSpliterator} on the right child, then it will never iterate
-         * over root's value. This serves as a marker for when {@link this} has split but the parent
-         * value still has not been processed.
+         * with one of root's children, but keeps this {@link TreapSpliterator} as-is, then it will
+         * iterate over the chosen child (and all of its children) twice. If it sets this
+         * {@link TreapSpliterator} on, say, the left child, and a new {@link TreapSpliterator} on the
+         * right child, then it will never iterate over root's value. This serves as a marker for when
+         * this {@link TreapSpliterator} has split but the parent value still has not been processed.
          */
         private T unprocessedParent = null;
 
@@ -318,7 +362,7 @@ public class Treap<T extends Comparable<T>> implements Collection<T> {
 
         @Override
         public int characteristics() {
-            return DISTINCT | NONNULL | SIZED | SUBSIZED | SORTED;
+            return CHARACTERISTICS;
         }
     }
 }
